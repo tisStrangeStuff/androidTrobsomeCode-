@@ -1,0 +1,113 @@
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.provider.MediaStore;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.SeekBar;
+import android.widget.TextView;
+import java.util.concurrent.TimeUnit;
+
+public class MainActivity extends AppCompatActivity {
+    SeekBar seekBar;
+    Button button;
+    TextView textView;
+    CountDownTimer countDownTimer;
+    MediaPlayer mediaPlayer;
+
+    boolean startStop = false;
+    int sliderProg;
+    String text2 = String.format("%02d:%02d",
+            TimeUnit.MILLISECONDS.toMinutes(sliderProg * 1) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(sliderProg * 1 )),
+            TimeUnit.MILLISECONDS.toSeconds(sliderProg * 1) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(sliderProg* 1)));
+
+
+    public void onClick(View view) {
+        if (!startStop) {
+            startStop = true;
+            button.setText("Stop");
+            countDownTimer.start();
+
+
+        } else {
+            startStop = false;
+            button.setText("Start");
+            countDownTimer.cancel();
+        }
+
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        //sets View
+        seekBar =findViewById(R.id.seekBar);
+        button = findViewById(R.id.button2);
+        textView = findViewById(R.id.textView);
+        mediaPlayer = MediaPlayer.create(this, R.raw.beeps2);
+
+        seekBar.setMax(600);
+
+        textView.setText(text2);
+
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                countDownTimer.cancel();
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                //stops the timer and changes button to start
+
+                button.setText("Start");
+                startStop = false;
+                sliderProg = seekBar.getProgress() * 1000;
+                textView.setText(text2);
+
+                Log.i("SliderProg: ", String.valueOf(sliderProg));
+
+
+            }
+
+        });
+        countDownTimer = new CountDownTimer(seekBar.getProgress() * 1000, 100) {
+            @Override
+            public void onTick ( long millisUntilFinished){
+                //formats mills into mins and seconds to be displayed by textView
+                String text = String.format("%02d:%02d",
+                        TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(millisUntilFinished)),
+                        TimeUnit.MILLISECONDS.toSeconds(millisUntilFinished) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished)));
+                Log.i("SliderProg: ", String.valueOf(sliderProg));
+                textView.setText(text);
+
+            }
+
+            @Override
+            public void onFinish () {
+                //tells user time is up and change button to restart button.
+                textView.setText("Done");
+                mediaPlayer.start();
+                button.setText("Restart");
+                startStop = false;
+
+            }
+        } ;
+
+    }
+
+
+
+
+}
