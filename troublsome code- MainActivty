@@ -1,113 +1,79 @@
+package com.example.celebrityguesserthatworks;
+
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.media.AudioManager;
-import android.media.MediaPlayer;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.CountDownTimer;
-import android.provider.MediaStore;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
-import android.widget.SeekBar;
-import android.widget.TextView;
-import java.util.concurrent.TimeUnit;
+
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 public class MainActivity extends AppCompatActivity {
-    SeekBar seekBar;
-    Button button;
-    TextView textView;
-    CountDownTimer countDownTimer;
-    MediaPlayer mediaPlayer;
 
-    boolean startStop = false;
-    int sliderProg;
-    String text2 = String.format("%02d:%02d",
-            TimeUnit.MILLISECONDS.toMinutes(sliderProg * 1) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(sliderProg * 1 )),
-            TimeUnit.MILLISECONDS.toSeconds(sliderProg * 1) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(sliderProg* 1)));
+    Button buttonA;
+    Button buttonB;
+    Button buttonC;
+    Button buttonD;
 
+    public class DownloadTask extends AsyncTask<String, Void, String>{
 
-    public void onClick(View view) {
-        if (!startStop) {
-            startStop = true;
-            button.setText("Stop");
-            countDownTimer.start();
+        @Override
+        protected String doInBackground(String... urls) {
 
+            String result = null;
+            URL url;
+            HttpURLConnection urlConnection = null;
 
-        } else {
-            startStop = false;
-            button.setText("Start");
-            countDownTimer.cancel();
+            try {
+                url = new URL(urls[0]);
+
+                urlConnection = (HttpURLConnection) url.openConnection();
+                InputStream in = urlConnection.getInputStream();
+                InputStreamReader reader = new InputStreamReader(in);
+                int data = reader.read();
+
+                while(data != -1){
+                    char current = (char) data;
+
+                    result += current;
+
+                    data = reader.read();
+
+                }
+                return result;
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                return "failed";
+
+            }
         }
-
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        //sets View
-        seekBar =findViewById(R.id.seekBar);
-        button = findViewById(R.id.button2);
-        textView = findViewById(R.id.textView);
-        mediaPlayer = MediaPlayer.create(this, R.raw.beeps2);
 
-        seekBar.setMax(600);
+        DownloadTask task = new DownloadTask();
+        String result = null;
 
-        textView.setText(text2);
+        try {
+            result = task.execute("https://www.imdb.com/list/ls052283250/").get();
 
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+        }catch (Exception e) {
+            e.printStackTrace();
 
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                countDownTimer.cancel();
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                //stops the timer and changes button to start
-
-                button.setText("Start");
-                startStop = false;
-                sliderProg = seekBar.getProgress() * 1000;
-                textView.setText(text2);
-
-                Log.i("SliderProg: ", String.valueOf(sliderProg));
-
-
-            }
-
-        });
-        countDownTimer = new CountDownTimer(seekBar.getProgress() * 1000, 100) {
-            @Override
-            public void onTick ( long millisUntilFinished){
-                //formats mills into mins and seconds to be displayed by textView
-                String text = String.format("%02d:%02d",
-                        TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(millisUntilFinished)),
-                        TimeUnit.MILLISECONDS.toSeconds(millisUntilFinished) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished)));
-                Log.i("SliderProg: ", String.valueOf(sliderProg));
-                textView.setText(text);
-
-            }
-
-            @Override
-            public void onFinish () {
-                //tells user time is up and change button to restart button.
-                textView.setText("Done");
-                mediaPlayer.start();
-                button.setText("Restart");
-                startStop = false;
-
-            }
-        } ;
-
+        }
+        Log.i("Result", result);
     }
-
-
-
-
 }
+
+
+//Doens't display anything on the screen and I can't figure out why, nor does logcat display anything besideds a error
+//which I have never gotten before its 2021-04-29 17:27:03.074 4602-4602/com.example.celebrityguesserthatworks I/zygote: Rejecting re-init on previously-failed class java.lang.Class<androidx.core.view.ViewCompat$2>: java.lang.NoClassDefFoundError: Failed resolution of: Landroid/view/View$OnUnhandledKeyEventListener;
